@@ -1,4 +1,4 @@
-# OpenFang — Agent Instructions
+# OpenFang — Gemini Agent Instructions
 
 ## Project Overview
 OpenFang is an open-source Agent Operating System written in Rust (14 crates).
@@ -29,7 +29,7 @@ GROQ_API_KEY=<key> cargo test -p openfang-api --test api_integration_test -- --n
 ## Architecture
 
 ### Crate Dependency Graph
-```
+```text
 openfang-types      ← Core types, no deps on other crates
     ↓
 openfang-memory     ← SQLite persistence, vector embeddings, sessions
@@ -229,3 +229,8 @@ curl -s http://127.0.0.1:4200/ | grep -c "newComponentName"
 - All external HTTP requests go through SSRF protection
 - WASM sandbox with dual-metering (fuel + epoch) for untrusted code
 - Merkle hash-chain audit trail for all agent actions
+
+## Gemini-Specific Notes
+- When executing tasks, systematically adhere to these documented paths and verification steps.
+- Prioritize using exact internal tool endpoints when possible.
+- Use `rust-toolchain.toml` and standard cargo invocations exactly as listed above.
