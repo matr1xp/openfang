@@ -458,6 +458,19 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all -- --check
 ```
 
+### Running Locally from Source
+
+If you want to build and run the OpenFang CLI daemon locally without installing it via the script, use Cargo's `run` command specifying the `openfang` binary:
+
+```bash
+# Compile and start the daemon (starts the kernel & API)
+cargo run --bin openfang -- start
+
+# Alternatively, build a release binary
+cargo build --release -p openfang-cli
+./target/release/openfang start
+```
+
 ---
 
 ## Stability Notice
