@@ -5,6 +5,13 @@ All notable changes to OpenFang will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Tailscale/Network Exposure**: API can now be configured to listen on all interfaces (`0.0.0.0`) to support external access via Tailscale and other networks.
+- **Enhanced Security**: Added `api_key` support in `config.toml` to secure the API when exposed to the network.
+- **Frontend Compatibility**: Updated Content Security Policy (CSP) to allow WebSocket connections from non-local origins, ensuring the dashboard works over network IPs.
+
 ## [0.1.0] - 2026-02-24
 
 ### Added
