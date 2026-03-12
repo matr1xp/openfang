@@ -33,8 +33,10 @@ use tokio::sync::Mutex;
 use tracing::{debug, info, warn};
 
 /// Per-IP WebSocket connection tracker.
-/// Max 5 concurrent WS connections per IP address.
-const MAX_WS_PER_IP: usize = 5;
+/// Max 25 concurrent WS connections per IP address.
+/// The dashboard opens multiple simultaneous connections (one per agent panel,
+/// background polling tasks, etc.) from localhost, so a higher limit is needed.
+const MAX_WS_PER_IP: usize = 25;
 
 /// Idle timeout: close WS after 30 minutes of no client messages.
 const WS_IDLE_TIMEOUT: Duration = Duration::from_secs(30 * 60);
