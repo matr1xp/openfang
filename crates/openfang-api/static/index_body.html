@@ -1736,6 +1736,7 @@
                               <span x-show="runningJobId !== job.id">Run</span>
                               <span x-show="runningJobId === job.id">...</span>
                             </button>
+                            <button class="btn btn-ghost btn-sm" @click="startEdit(job)">Edit</button>
                             <button class="btn btn-ghost btn-sm" @click="toggleJob(job)" x-text="job.enabled ? 'Pause' : 'Enable'"></button>
                             <button class="btn btn-danger btn-sm" @click="deleteJob(job)">Del</button>
                           </div>
@@ -1815,6 +1816,58 @@
                 </div>
               </div>
             </template>
+
+            <!-- Edit Job Modal -->
+            <div x-show="showEditForm" style="display: none;">
+              <div class="modal-overlay" @click.self="closeEdit()" @keydown.escape.window="closeEdit()">
+                <div class="modal">
+                  <div class="modal-header">
+                    <h3>Edit Scheduled Job</h3>
+                    <button class="modal-close" @click="closeEdit()">&times;</button>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Job Name</label>
+                    <input class="form-input" x-model="editJob.name" placeholder="daily-report">
+                  </div>
+
+                  <div class="form-group">
+                    <label>Cron Expression</label>
+                    <input class="form-input" x-model="editJob.cron" placeholder="0 9 * * 1-5" style="font-family:monospace">
+                    <div class="text-xs text-dim mt-1" x-show="editJob.cron" x-text="describeCron(editJob.cron)"></div>
+                    <div class="text-xs text-dim mt-1">Format: <code>minute hour day-of-month month day-of-week</code></div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Agent</label>
+                    <select class="form-input" x-model="editJob.agent_id">
+                      <option value="">(select agent)</option>
+                      <template x-for="agent in availableAgents" :key="agent.id">
+                        <option :value="agent.id" x-text="agent.name"></option>
+                      </template>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Message</label>
+                    <textarea class="form-input" rows="3" x-model="editJob.message" placeholder="What to send the agent"></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Enabled</label>
+                    <label class="inline-flex items-center gap-2">
+                      <input type="checkbox" x-model="editJob.enabled">
+                      <span class="text-sm">Run on schedule</span>
+                    </label>
+                  </div>
+
+                  <div class="modal-actions">
+                    <button class="btn btn-primary" @click="saveJob()">Save Changes</button>
+                    <button class="btn btn-ghost" @click="closeEdit()">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- ── TAB: Event Triggers ── -->

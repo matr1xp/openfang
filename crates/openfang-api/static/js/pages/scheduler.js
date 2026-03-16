@@ -21,6 +21,7 @@ function schedulerPage() {
 
     // -- Create Job form --
     showCreateForm: false,
+    showEditForm: false,
     newJob: {
       name: '',
       cron: '',
@@ -28,6 +29,7 @@ function schedulerPage() {
       message: '',
       enabled: true
     },
+    editJob: null,
     creating: false,
 
     // -- Run Now state --
@@ -81,6 +83,7 @@ function schedulerPage() {
           enabled: j.enabled,
           last_run: j.last_run,
           next_run: j.next_run,
+          run_count: j.run_count || 0,
           delivery: j.delivery ? j.delivery.kind || '' : '',
           created_at: j.created_at
         };
@@ -113,7 +116,7 @@ function schedulerPage() {
               name: job.name || '(unnamed)',
               type: 'schedule',
               status: 'completed',
-              run_count: 0
+              run_count: job.run_count || 0
             });
           }
         }
@@ -173,6 +176,52 @@ function schedulerPage() {
       this.creating = false;
     },
 
+    startEdit(job) {
+      this.editJob = Object.assign({}, job, {
+        agent_id: job.agent_id || job.agent || '',
+        message: job.message || '',
+        cron: job.cron || ''
+      });
+      this.showEditForm = true;
+    },
+
+    closeEdit() {
+      this.showEditForm = false;
+      this.editJob = null;
+    },
+
+    async saveJob() {
+      if (!this.editJob || !this.editJob.id) {
+        OpenFangToast.error('No job selected');
+        return;
+      }
+      if (!this.editJob.name.trim()) {
+        OpenFangToast.warn('Please enter a job name');
+        return;
+      }
+      if (!this.editJob.cron.trim()) {
+        OpenFangToast.warn('Please enter a cron expression');
+        return;
+      }
+      const jobId = this.editJob.id;
+      try {
+        const body = {
+          name: this.editJob.name,
+          schedule: { kind: 'cron', expr: this.editJob.cron },
+          action: { kind: 'agent_turn', message: this.editJob.message || 'Scheduled task: ' + this.editJob.name },
+          delivery: { kind: 'last_channel' },
+          enabled: this.editJob.enabled,
+          agent_id: this.editJob.agent_id,
+        };
+        await OpenFangAPI.put('/api/cron/jobs/' + jobId, body);
+        OpenFangToast.success('Schedule updated');
+        this.closeEdit();
+        await this.loadJobs();
+      } catch(e) {
+        OpenFangToast.error('Failed to update schedule: ' + (e.message || e));
+      }
+    },
+
     async toggleJob(job) {
       try {
         var newState = !job.enabled;
@@ -189,27 +238,30 @@ function schedulerPage() {
       var jobName = job.name || job.id;
       OpenFangToast.confirm('Delete Schedule', 'Delete "' + jobName + '"? This cannot be undone.', async function() {
         try {
-          await OpenFangAPI.del('/api/cron/jobs/' + job.id);
-          self.jobs = self.jobs.filter(function(j) { return j.id !== job.id; });
-          OpenFangToast.success('Schedule "' + jobName + '" deleted');
-        } catch(e) {
-          OpenFangToast.error('Failed to delete schedule: ' + (e.message || e));
-        }
-      });
+        await OpenFangAPI.del('/api/cron/jobs/' + job.id);
+        self.jobs = self.jobs.filter(function(j) { return j.id !== job.id; });
+        OpenFangToast.success('Schedule "' + jobName + '" deleted');
+      } catch(e) {
+        OpenFangToast.error('Failed to delete schedule: ' + (e.message || e));
+      }
+    });
     },
+
 
     async runNow(job) {
       this.runningJobId = job.id;
       try {
-        var result = await OpenFangAPI.post('/api/schedules/' + job.id + '/run', {});
+        var result = await OpenFangAPI.post('/api/cron/jobs/' + job.id + '/run', {});
         if (result.status === 'completed') {
           OpenFangToast.success('Schedule "' + (job.name || 'job') + '" executed successfully');
-          job.last_run = new Date().toISOString();
+          job.last_run = result.last_run || new Date().toISOString();
+          job.run_count = (job.run_count || 0) + 1;
+          if (result.next_run) job.next_run = result.next_run;
         } else {
           OpenFangToast.error('Schedule run failed: ' + (result.error || 'Unknown error'));
         }
       } catch(e) {
-        OpenFangToast.error('Run Now is not yet available for cron jobs');
+        OpenFangToast.error('Failed to run job: ' + (e.message || e));
       }
       this.runningJobId = '';
     },

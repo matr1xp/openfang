@@ -151,6 +151,7 @@ pub struct OpenFangKernel {
     pub whatsapp_gateway_pid: Arc<std::sync::Mutex<Option<u32>>>,
     /// Channel adapters registered at bridge startup (for proactive `channel_send` tool).
     pub channel_adapters:
+       
         dashmap::DashMap<String, Arc<dyn openfang_channels::types::ChannelAdapter>>,
     /// Hot-reloadable default model override (set via config hot-reload, read at agent spawn).
     pub default_model_override:
@@ -4010,149 +4011,9 @@ impl OpenFangKernel {
                     let due = kernel.cron_scheduler.due_jobs();
                     for job in due {
                         let job_id = job.id;
-                        let agent_id = job.agent_id;
-                        let job_name = job.name.clone();
-
-                        match &job.action {
-                            openfang_types::scheduler::CronAction::SystemEvent { text } => {
-                                tracing::debug!(job = %job_name, "Cron: firing system event");
-                                let payload_bytes = serde_json::to_vec(&serde_json::json!({
-                                    "type": format!("cron.{}", job_name),
-                                    "text": text,
-                                    "job_id": job_id.to_string(),
-                                }))
-                                .unwrap_or_default();
-                                let event = Event::new(
-                                    AgentId::new(), // system-originated
-                                    EventTarget::Broadcast,
-                                    EventPayload::Custom(payload_bytes),
-                                );
-                                kernel.publish_event(event).await;
-                                kernel.cron_scheduler.record_success(job_id);
-                            }
-                            openfang_types::scheduler::CronAction::AgentTurn {
-                                message,
-                                timeout_secs,
-                                ..
-                            } => {
-                                tracing::debug!(job = %job_name, agent = %agent_id, "Cron: firing agent turn");
-                                let timeout_s = timeout_secs.unwrap_or(120);
-                                let timeout = std::time::Duration::from_secs(timeout_s);
-                                let delivery = job.delivery.clone();
-                                let kh: std::sync::Arc<
-                                    dyn openfang_runtime::kernel_handle::KernelHandle,
-                                > = kernel.clone();
-                                match tokio::time::timeout(
-                                    timeout,
-                                    kernel.send_message_with_handle(
-                                        agent_id,
-                                        message,
-                                        Some(kh),
-                                        None,
-                                        None,
-                                    ),
-                                )
-                                .await
-                                {
-                                    Ok(Ok(result)) => {
-                                        match cron_deliver_response(
-                                            &kernel,
-                                            agent_id,
-                                            &result.response,
-                                            &delivery,
-                                        )
-                                        .await
-                                        {
-                                            Ok(()) => {
-                                                tracing::info!(job = %job_name, "Cron job completed successfully");
-                                                kernel.cron_scheduler.record_success(job_id);
-                                            }
-                                            Err(e) => {
-                                                tracing::warn!(job = %job_name, error = %e, "Cron job delivery failed");
-                                                kernel.cron_scheduler.record_failure(job_id, &e);
-                                            }
-                                        }
-                                    }
-                                    Ok(Err(e)) => {
-                                        let err_msg = format!("{e}");
-                                        tracing::warn!(job = %job_name, error = %err_msg, "Cron job failed");
-                                        kernel.cron_scheduler.record_failure(job_id, &err_msg);
-                                    }
-                                    Err(_) => {
-                                        tracing::warn!(job = %job_name, timeout_s, "Cron job timed out");
-                                        kernel.cron_scheduler.record_failure(
-                                            job_id,
-                                            &format!("timed out after {timeout_s}s"),
-                                        );
-                                    }
-                                }
-                            }
-                            openfang_types::scheduler::CronAction::WorkflowRun {
-                                workflow_id,
-                                input,
-                                timeout_secs,
-                            } => {
-                                tracing::debug!(job = %job_name, workflow = %workflow_id, "Cron: firing workflow run");
-                                let wf_input = input.clone().unwrap_or_default();
-                                let timeout_s = timeout_secs.unwrap_or(120);
-                                let timeout = std::time::Duration::from_secs(timeout_s);
-                                let delivery = job.delivery.clone();
-
-                                // Resolve workflow: try UUID first, then name
-                                let wf_id = match uuid::Uuid::parse_str(workflow_id) {
-                                    Ok(uuid) => crate::workflow::WorkflowId(uuid),
-                                    Err(_) => {
-                                        let all_wfs = kernel.workflows.list_workflows().await;
-                                        if let Some(wf) =
-                                            all_wfs.iter().find(|w| w.name == *workflow_id)
-                                        {
-                                            wf.id
-                                        } else {
-                                            let err_msg =
-                                                format!("workflow not found: {workflow_id}");
-                                            tracing::warn!(job = %job_name, %err_msg);
-                                            kernel.cron_scheduler.record_failure(job_id, &err_msg);
-                                            continue;
-                                        }
-                                    }
-                                };
-
-                                match tokio::time::timeout(
-                                    timeout,
-                                    kernel.run_workflow(wf_id, wf_input),
-                                )
-                                .await
-                                {
-                                    Ok(Ok((_run_id, output))) => {
-                                        match cron_deliver_response(
-                                            &kernel, agent_id, &output, &delivery,
-                                        )
-                                        .await
-                                        {
-                                            Ok(()) => {
-                                                tracing::info!(job = %job_name, "Cron workflow completed");
-                                                kernel.cron_scheduler.record_success(job_id);
-                                            }
-                                            Err(e) => {
-                                                tracing::warn!(job = %job_name, error = %e, "Cron workflow delivery failed");
-                                                kernel.cron_scheduler.record_failure(job_id, &e);
-                                            }
-                                        }
-                                    }
-                                    Ok(Err(e)) => {
-                                        let err_msg = format!("{e}");
-                                        tracing::warn!(job = %job_name, error = %err_msg, "Cron workflow failed");
-                                        kernel.cron_scheduler.record_failure(job_id, &err_msg);
-                                    }
-                                    Err(_) => {
-                                        tracing::warn!(job = %job_name, timeout_s, "Cron workflow timed out");
-                                        kernel.cron_scheduler.record_failure(
-                                            job_id,
-                                            &format!("workflow timed out after {timeout_s}s"),
-                                        );
-                                    }
-                                }
-                            }
+                        match execute_cron_job(&kernel, &job).await {
+                            Ok(_) => kernel.cron_scheduler.record_success(job_id),
+                            Err(err_msg) => kernel.cron_scheduler.record_failure(job_id, &err_msg),
                         }
                     }
 
@@ -5660,6 +5521,130 @@ async fn cron_deliver_response(
     }
 }
 
+/// Execute a cron job immediately (shared by scheduler tick loop and manual runs).
+async fn execute_cron_job(
+    kernel: &OpenFangKernel,
+    job: &openfang_types::scheduler::CronJob,
+) -> Result<String, String> {
+    use openfang_types::scheduler::CronAction;
+
+    match &job.action {
+        CronAction::SystemEvent { text } => {
+            let payload_bytes = serde_json::to_vec(&serde_json::json!({
+                "type": format!("cron.{}", job.name),
+                "text": text,
+                "job_id": job.id.to_string(),
+            }))
+            .unwrap_or_default();
+            let event = Event::new(
+                AgentId::new(), // system-originated
+                EventTarget::Broadcast,
+                EventPayload::Custom(payload_bytes),
+            );
+            kernel.publish_event(event).await;
+            Ok(text.clone())
+        }
+        CronAction::AgentTurn {
+            message,
+            timeout_secs,
+            ..
+        } => {
+            let timeout_s = timeout_secs.unwrap_or(120);
+            let timeout = std::time::Duration::from_secs(timeout_s);
+            let delivery = job.delivery.clone();
+            match tokio::time::timeout(timeout, kernel.send_message(job.agent_id, message)).await {
+                Ok(Ok(result)) => {
+                    let _ = cron_deliver_response(kernel, job.agent_id, &result.response, &delivery).await;
+                    Ok(result.response)
+                }
+                Ok(Err(e)) => Err(format!("{e}")),
+                Err(_) => Err(format!("timed out after {timeout_s}s")),
+            }
+        }
+        CronAction::WorkflowRun {
+            workflow_id,
+            input,
+            timeout_secs,
+        } => {
+            let wf_input = input.clone().unwrap_or_default();
+            let timeout_s = timeout_secs.unwrap_or(120);
+            let timeout = std::time::Duration::from_secs(timeout_s);
+            let delivery = job.delivery.clone();
+
+            // Resolve workflow: try UUID first, then name
+            let wf_id = match uuid::Uuid::parse_str(workflow_id) {
+                Ok(uuid) => crate::workflow::WorkflowId(uuid),
+                Err(_) => {
+                    let all_wfs = kernel.workflows.list_workflows().await;
+                    if let Some(wf) = all_wfs.iter().find(|w| w.name == *workflow_id) {
+                        wf.id
+                    } else {
+                        return Err(format!("workflow not found: {workflow_id}"));
+                    }
+                }
+            };
+
+            match tokio::time::timeout(timeout, kernel.run_workflow(wf_id, wf_input)).await {
+                Ok(Ok((_run_id, output))) => {
+                    let _ = cron_deliver_response(kernel, job.agent_id, &output, &delivery).await;
+                    Ok(output)
+                }
+                Ok(Err(e)) => Err(format!("{e}")),
+                Err(_) => Err(format!("workflow timed out after {timeout_s}s")),
+            }
+        }
+    }
+}
+
+/// Outcome of a manual cron run (returned to the API layer).
+#[derive(Debug)]
+pub struct CronRunOutcome {
+    pub job_id: openfang_types::scheduler::CronJobId,
+    pub agent_id: AgentId,
+    pub response: String,
+    pub last_run: Option<chrono::DateTime<chrono::Utc>>,
+    pub next_run: Option<chrono::DateTime<chrono::Utc>>,
+    pub last_status: Option<String>,
+}
+
+impl OpenFangKernel {
+    /// Run a cron job immediately via API (returns output and updated timing metadata).
+    pub async fn run_cron_job_now(
+        &self,
+        job_id: openfang_types::scheduler::CronJobId,
+    ) -> Result<CronRunOutcome, String> {
+        let job = self
+            .cron_scheduler
+            .get_job(job_id)
+            .ok_or_else(|| "Cron job not found".to_string())?;
+
+        if !job.enabled {
+            return Err("Cron job is disabled".to_string());
+        }
+
+        match execute_cron_job(self, &job).await {
+            Ok(response) => {
+                self.cron_scheduler.record_success(job_id);
+                let meta = self.cron_scheduler.get_meta(job_id);
+                let _ = self.cron_scheduler.persist();
+                Ok(CronRunOutcome {
+                    job_id,
+                    agent_id: job.agent_id,
+                    response,
+                    last_run: meta.as_ref().and_then(|m| m.job.last_run),
+                    next_run: meta.as_ref().and_then(|m| m.job.next_run),
+                    last_status: meta.and_then(|m| m.last_status),
+                })
+            }
+            Err(err) => {
+                self.cron_scheduler.record_failure(job_id, &err);
+                let _ = self.cron_scheduler.persist();
+                Err(err)
+            }
+        }
+    }
+}
+
 #[async_trait]
 impl KernelHandle for OpenFangKernel {
     async fn spawn_agent(
@@ -5891,6 +5876,7 @@ impl KernelHandle for OpenFangKernel {
             created_at: chrono::Utc::now(),
             next_run: None,
             last_run: None,
+            run_count: 0,
         };
 
         let id = self
@@ -6614,6 +6600,92 @@ mod tests {
         assert!(!caps
             .iter()
             .any(|c| matches!(c, Capability::ToolInvoke(name) if name == "shell_exec")));
+    }
+
+    #[tokio::test]
+    async fn test_run_cron_job_now_system_event() {
+        use openfang_types::scheduler::{
+            CronAction, CronDelivery, CronJob, CronJobId, CronSchedule,
+        };
+
+        let tmp = tempfile::tempdir().unwrap();
+        let mut config = KernelConfig::default();
+        config.home_dir = tmp.path().to_path_buf();
+        config.data_dir = config.home_dir.join("data");
+        config.workspaces_dir = Some(config.home_dir.join("workspaces"));
+        std::fs::create_dir_all(&config.data_dir).unwrap();
+
+        let kernel = OpenFangKernel::boot_with_config(config).expect("kernel boot");
+
+        let job = CronJob {
+            id: CronJobId::new(),
+            agent_id: AgentId::new(),
+            name: "ping".to_string(),
+            schedule: CronSchedule::Every { every_secs: 60 },
+            action: CronAction::SystemEvent {
+                text: "hello".to_string(),
+            },
+            delivery: CronDelivery::None,
+            enabled: true,
+            created_at: chrono::Utc::now(),
+            last_run: None,
+            next_run: None,
+            run_count: 0,
+        };
+
+        let job_id = kernel.cron_scheduler.add_job(job, false).unwrap();
+        let outcome = kernel
+            .run_cron_job_now(job_id)
+            .await
+            .expect("run now should succeed");
+
+        assert_eq!(outcome.job_id, job_id);
+        assert_eq!(outcome.response, "hello");
+        assert!(outcome.last_run.is_some());
+        let meta = kernel.cron_scheduler.get_meta(job_id).unwrap();
+        assert_eq!(meta.last_status.as_deref(), Some("ok"));
+        assert!(meta.job.next_run.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_run_cron_job_now_disabled() {
+        use openfang_types::scheduler::{
+            CronAction, CronDelivery, CronJob, CronJobId, CronSchedule,
+        };
+
+        let tmp = tempfile::tempdir().unwrap();
+        let mut config = KernelConfig::default();
+        config.home_dir = tmp.path().to_path_buf();
+        config.data_dir = config.home_dir.join("data");
+        config.workspaces_dir = Some(config.home_dir.join("workspaces"));
+        std::fs::create_dir_all(&config.data_dir).unwrap();
+
+        let kernel = OpenFangKernel::boot_with_config(config).expect("kernel boot");
+
+        let job = CronJob {
+            id: CronJobId::new(),
+            agent_id: AgentId::new(),
+            name: "ping".to_string(),
+            schedule: CronSchedule::Every { every_secs: 60 },
+            action: CronAction::SystemEvent {
+                text: "hello".to_string(),
+            },
+            delivery: CronDelivery::None,
+            enabled: false,
+            created_at: chrono::Utc::now(),
+            last_run: None,
+            next_run: None,
+            run_count: 0,
+        };
+        let job_id = job.id;
+        kernel.cron_scheduler.add_job(job, false).unwrap();
+
+        let err = kernel.run_cron_job_now(job_id).await.unwrap_err();
+        assert!(err.contains("disabled"));
+
+        let meta = kernel.cron_scheduler.get_meta(job_id).unwrap();
+        assert_eq!(meta.job.enabled, false);
+        assert!(meta.job.last_run.is_none());
     }
 
     #[test]

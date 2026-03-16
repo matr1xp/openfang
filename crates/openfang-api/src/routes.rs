@@ -2294,168 +2294,288 @@ fn channel_config_values(
 ) -> Option<serde_json::Value> {
     match name {
         "telegram" => config
+            
             .telegram
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "discord" => config
+            
             .discord
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "slack" => config
+            
             .slack
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "whatsapp" => config
+            
             .whatsapp
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "signal" => config
+            
             .signal
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "matrix" => config
+            
             .matrix
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "email" => config
+            
             .email
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "teams" => config
+            
             .teams
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "mattermost" => config
+            
             .mattermost
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "irc" => config
+            
             .irc
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "google_chat" => config
+            
             .google_chat
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "twitch" => config
+            
             .twitch
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "rocketchat" => config
+            
             .rocketchat
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "zulip" => config
+            
             .zulip
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "xmpp" => config
+            
             .xmpp
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "line" => config
+            
             .line
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "viber" => config
+            
             .viber
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "messenger" => config
+            
             .messenger
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "reddit" => config
+            
             .reddit
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "mastodon" => config
+            
             .mastodon
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "bluesky" => config
+            
             .bluesky
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "feishu" => config
+            
             .feishu
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "revolt" => config
+            
             .revolt
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "nextcloud" => config
+            
             .nextcloud
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "guilded" => config
+            
             .guilded
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "keybase" => config
+            
             .keybase
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "threema" => config
+            
             .threema
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "nostr" => config
+            
             .nostr
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "webex" => config
+            
             .webex
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "pumble" => config
+            
             .pumble
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "flock" => config
+            
             .flock
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "twist" => config
+            
             .twist
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "mumble" => config
+            
             .mumble
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "dingtalk" => config
+            
             .dingtalk
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "dingtalk_stream" => config
             .dingtalk_stream
             .as_ref()
             .and_then(|c| serde_json::to_value(c).ok()),
         "discourse" => config
+            
             .discourse
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "gitter" => config
+            
             .gitter
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "ntfy" => config
+            
             .ntfy
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "gotify" => config
+            
             .gotify
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "webhook" => config
+            
             .webhook
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "linkedin" => config
+            
             .linkedin
+            
             .as_ref()
+            
             .and_then(|c| serde_json::to_value(c).ok()),
         "wecom" => config
             .wecom
@@ -8514,9 +8634,13 @@ pub async fn run_schedule(
 
     let kernel_handle: Arc<dyn KernelHandle> = state.kernel.clone() as Arc<dyn KernelHandle>;
     match state
+        
         .kernel
+        
         .send_message_with_handle(target_agent, &run_message, Some(kernel_handle), None, None)
+        
         .await
+   
     {
         Ok(result) => (
             StatusCode::OK,
@@ -10113,6 +10237,159 @@ pub async fn cron_job_status(
             StatusCode::BAD_REQUEST,
             Json(serde_json::json!({"error": "Invalid job ID"})),
         ),
+    }
+}
+
+/// PUT /api/cron/jobs/{id} — Update a cron job definition.
+pub async fn update_cron_job(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    let job_id = match uuid::Uuid::parse_str(&id) {
+        Ok(uuid) => openfang_types::scheduler::CronJobId(uuid),
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": "Invalid job ID"})),
+            );
+        }
+    };
+
+    match state.kernel.cron_scheduler.get_job(job_id) {
+        Some(mut existing) => {
+            // Apply updates
+            if let Some(name) = body.get("name").and_then(|v| v.as_str()) {
+                existing.name = name.to_string();
+            }
+            if let Some(agent_id) = body.get("agent_id").and_then(|v| v.as_str()) {
+                if let Ok(uuid) = uuid::Uuid::parse_str(agent_id) {
+                    existing.agent_id = AgentId(uuid);
+                } else {
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        Json(serde_json::json!({"error": "Invalid agent_id"})),
+                    );
+                }
+            }
+            if let Some(enabled) = body.get("enabled").and_then(|v| v.as_bool()) {
+                existing.enabled = enabled;
+            }
+            if let Some(sched) = body.get("schedule") {
+                match serde_json::from_value::<openfang_types::scheduler::CronSchedule>(
+                    sched.clone(),
+                ) {
+                    Ok(s) => existing.schedule = s,
+                    Err(e) => {
+                        return (
+                            StatusCode::BAD_REQUEST,
+                            Json(serde_json::json!({"error": format!("Invalid schedule: {e}")})),
+                        );
+                    }
+                }
+            }
+            if let Some(action) = body.get("action") {
+                match serde_json::from_value::<openfang_types::scheduler::CronAction>(
+                    action.clone(),
+                ) {
+                    Ok(a) => existing.action = a,
+                    Err(e) => {
+                        return (
+                            StatusCode::BAD_REQUEST,
+                            Json(serde_json::json!({"error": format!("Invalid action: {e}")})),
+                        );
+                    }
+                }
+            }
+            if let Some(delivery) = body.get("delivery") {
+                match serde_json::from_value::<openfang_types::scheduler::CronDelivery>(
+                    delivery.clone(),
+                ) {
+                    Ok(d) => existing.delivery = d,
+                    Err(e) => {
+                        return (
+                            StatusCode::BAD_REQUEST,
+                            Json(serde_json::json!({"error": format!("Invalid delivery: {e}")})),
+                        );
+                    }
+                }
+            }
+
+            // Validate and persist (respect per-agent caps)
+            let existing_count = state
+                .kernel
+                .cron_scheduler
+                .count_jobs_for_agent(existing.agent_id)
+                .saturating_sub(1);
+            if let Err(e) = existing.validate(existing_count) {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(serde_json::json!({"error": e})),
+                );
+            }
+            if let Err(e) = state.kernel.cron_scheduler.replace_job(existing) {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({"error": format!("{e}")})),
+                );
+            }
+            let _ = state.kernel.cron_scheduler.persist();
+
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({"status": "updated", "id": id})),
+            )
+        }
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": "Job not found"})),
+        ),
+    }
+}
+
+/// POST /api/cron/jobs/{id}/run — Manually run a cron job immediately.
+pub async fn run_cron_job_now(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    let job_id = match uuid::Uuid::parse_str(&id) {
+        Ok(uuid) => openfang_types::scheduler::CronJobId(uuid),
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": "Invalid job ID"})),
+            );
+        }
+    };
+
+    match state.kernel.run_cron_job_now(job_id).await {
+        Ok(outcome) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "status": "completed",
+                "job_id": id,
+                "agent_id": outcome.agent_id.to_string(),
+                "response": outcome.response,
+                "last_run": outcome.last_run.map(|t| t.to_rfc3339()),
+                "next_run": outcome.next_run.map(|t| t.to_rfc3339()),
+                "last_status": outcome.last_status,
+            })),
+        ),
+        Err(err) => {
+            let status = if err.contains("disabled") {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            };
+            (
+                status,
+                Json(serde_json::json!({
+                    "status": "failed",
+                    "job_id": id,
+                    "error": err,
+                })),
+            )
+        }
     }
 }
 

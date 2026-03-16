@@ -524,6 +524,7 @@ impl ChannelBridgeHandle for KernelBridgeAdapter {
                     created_at: chrono::Utc::now(),
                     last_run: None,
                     next_run: None,
+                    run_count: 0,
                 };
 
                 match self.kernel.cron_scheduler.add_job(job, false) {

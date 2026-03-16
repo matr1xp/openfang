@@ -173,6 +173,30 @@ impl CronScheduler {
             .ok_or_else(|| OpenFangError::Internal(format!("Cron job {id} not found")))
     }
 
+    /// Replace an existing job with updated fields while preserving runtime metadata.
+    pub fn replace_job(&self, job: CronJob) -> OpenFangResult<()> {
+        let id = job.id;
+        if let Some(mut meta) = self.jobs.get_mut(&id) {
+            let prev_last_run = meta.job.last_run;
+            let prev_last_status = meta.last_status.clone();
+
+            meta.job.name = job.name;
+            meta.job.agent_id = job.agent_id;
+            meta.job.enabled = job.enabled;
+            meta.job.schedule = job.schedule;
+            meta.job.action = job.action;
+            meta.job.delivery = job.delivery;
+
+            meta.job.last_run = prev_last_run;
+            meta.job.next_run = Some(compute_next_run(&meta.job.schedule));
+            meta.consecutive_errors = 0;
+            meta.last_status = prev_last_status;
+            Ok(())
+        } else {
+            Err(OpenFangError::Internal(format!("Cron job {id} not found")))
+        }
+    }
+
     /// Enable or disable a job. Re-enabling resets errors and recomputes
     /// `next_run`.
     pub fn set_enabled(&self, id: CronJobId, enabled: bool) -> OpenFangResult<()> {
@@ -209,6 +233,14 @@ impl CronScheduler {
             .filter(|r| r.value().job.agent_id == agent_id)
             .map(|r| r.value().job.clone())
             .collect()
+    }
+
+    /// Count jobs for a specific agent.
+    pub fn count_jobs_for_agent(&self, agent_id: AgentId) -> usize {
+        self.jobs
+            .iter()
+            .filter(|r| r.value().job.agent_id == agent_id)
+            .count()
     }
 
     /// List all jobs across all agents.
@@ -317,6 +349,7 @@ impl CronScheduler {
         let should_remove = {
             if let Some(mut meta) = self.jobs.get_mut(&id) {
                 meta.job.last_run = Some(Utc::now());
+                meta.job.run_count += 1;
                 meta.last_status = Some("ok".to_string());
                 meta.consecutive_errors = 0;
                 // one_shot jobs get removed; recurring jobs keep the next_run
@@ -465,6 +498,7 @@ mod tests {
             created_at: Utc::now(),
             last_run: None,
             next_run: None,
+            run_count: 0,
         }
     }
 

@@ -186,6 +186,9 @@ pub struct CronJob {
     pub last_run: Option<DateTime<Utc>>,
     /// When the job is next expected to fire.
     pub next_run: Option<DateTime<Utc>>,
+    /// Total number of times this job has been executed (manual + scheduled).
+    #[serde(default)]
+    pub run_count: u64,
 }
 
 impl CronJob {
@@ -427,6 +430,7 @@ mod tests {
             created_at: Utc::now(),
             last_run: None,
             next_run: None,
+            run_count: 0,
         }
     }
 
